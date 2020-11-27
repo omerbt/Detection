@@ -1,16 +1,45 @@
 import torch
 from torchvision.ops import nms
-
 from net12FCN import NetFCN
-from noyNet import Net
 import matplotlib.pyplot as plt
 import cv2 as cv
 import numpy as np
 import imutils
+import os
+
+from noyNet import Net
+
+
+def overlay(image, bounding_boxes):
+    for x1, y1, x2, y2 in bounding_boxes:
+        cv.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    cv.imshow('image', image)
+    cv.waitKey(0)
+    cv.destroyAllWindows()
+
+
+def evaluate_model(path, detect, suffix='.jpg'):
+    f = open(path, 'r')
+    out = open("12-net_results/fold-01-out.txt", 'w')
+    for line in f:
+        assert os.path.isfile(os.path.join('data/fddb/images', line[:-1] + suffix))
+        image = cv.imread(os.path.join('data/fddb/images', line[:-1] + suffix))
+        boxes, scores = detect.detect(image)
+        write_to_file(out, boxes, scores, line[:-1])
+
+
+def write_to_file(file, boxes, scores, image):
+    file.write(image + "\n")
+    file.write(str(len(boxes)) + "\n")
+    for i in range(len(boxes)):
+        H = str(boxes[i][2] - boxes[i][0])
+        file.write(str(boxes[i][0]) + " " + str(
+            boxes[i][1]) + " " + H + " " + H + " " + str(scores[i]) + "\n")
 
 
 class Detect:
-    def __init__(self, model, scale, min_size, iou_th=0.1):
+
+    def __init__(self, model, scale, min_size, iou_th):
         self.model = model
         self.model.eval()
         self.scale = scale
@@ -25,34 +54,27 @@ class Detect:
         returns
             - list of bounding boxes
         """
+        bounding_boxes = []
+        scores = []
         for i, scaled_image in enumerate(self.pyramid(image)):
             scaled_image = np.rollaxis(scaled_image, 2, 0)  # convert to channels_first
             scaled_image = torch.tensor(scaled_image).unsqueeze(0).to(self.device)
             with torch.no_grad():
                 output = self.model(scaled_image.float()).squeeze()
-            z = output.view(-1, 2)
-            print(z[0])
-            probability_map = torch.softmax(z, dim=1).numpy()
-            print(probability_map[0])
-            return
-            print(np.percentile(probability_map, 50))
+            probability_map = torch.softmax(output, dim=1).numpy()[0]
             x, y = np.indices(output.shape[1:])
-            x, y = x.flatten()[probability_map > 0.5], y.flatten()[probability_map > 0.5]
-            x *= 4
-            y *= 4
-            probability_map = probability_map[probability_map > 0.5]
+            positive_idx = probability_map > 0.5
+            x, y = 2 * x[positive_idx], 2 * y[positive_idx]
+            probability_map = probability_map[positive_idx]
             boxes_for_nms = np.rollaxis(np.stack([x, y, x + 12, y + 12]), 1, 0)
             boxes_for_nms = torch.tensor(boxes_for_nms).float().to(self.device)
             probability_map = torch.tensor(probability_map).float().to(self.device)
             boxes_after_nms_idx = nms(boxes_for_nms, probability_map, self.iou_th)
             b = boxes_for_nms[boxes_after_nms_idx].numpy().squeeze()
-            b *= self.scale ** i
-            if i == 3:
-                for x1, y1, x2, y2 in b:
-                    cv.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                plt.imshow(image)
-                plt.show()
-                return
+            scores.extend(probability_map[boxes_after_nms_idx].numpy())
+            bounding_boxes.extend((b * self.scale ** i).astype(np.uint32))
+
+        return bounding_boxes, scores
 
     def pyramid(self, image):
         """
@@ -73,12 +95,19 @@ class Detect:
             yield image
 
 
-# model = NetFCN()
-model = Net()
-# state_dict = torch.load('12NetFCN.pt', map_location=torch.device('cpu'))['model_state_dict']
-state_dict = torch.load('n12_fcn_model_200_epoch.pt', map_location=torch.device('cpu'))
-# model.load_state_dict(state_dict)
+noy = False
+if noy:
+    model = Net()
+    state_dict = torch.load('n12_fcn_model_200_epoch.pt', map_location=torch.device('cpu'))
+else:
+    model = NetFCN()
+    state_dict = torch.load('12NetFCN.pt', map_location=torch.device('cpu'))['model_state_dict']
+
 model.load_state_dict(state_dict)
-image = cv.imread('img.jpg')
-detect = Detect(model, scale=1.5, min_size=(32, 32))
-detect.detect(image)
+detect = Detect(model, scale=1.5, min_size=(32, 32), iou_th=0.05)
+image = cv.imread('img2.jpg')
+bounding_boxes, scores = detect.detect(image)
+# overlay(image, bounding_boxes)
+f = open('test.txt', 'w')
+write_to_file(f, bounding_boxes, scores, 'image.jpg')
+evaluate_model("data/fddb/FDDB-folds/FDDB-fold-01.txt", detect)
