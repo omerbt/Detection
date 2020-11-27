@@ -1,7 +1,6 @@
 import torch
 from torchvision.ops import nms
 from net12FCN import NetFCN
-import matplotlib.pyplot as plt
 import cv2 as cv
 import numpy as np
 import imutils
@@ -32,9 +31,10 @@ def write_to_file(file, boxes, scores, image):
     file.write(image + "\n")
     file.write(str(len(boxes)) + "\n")
     for i in range(len(boxes)):
-        H = str(boxes[i][2] - boxes[i][0])
-        file.write(str(boxes[i][0]) + " " + str(
-            boxes[i][1]) + " " + H + " " + H + " " + str(scores[i]) + "\n")
+        H = W = boxes[i][2] - boxes[i][0]
+        y = max(0, int(boxes[i][1] - 0.2 * H))
+        H = int(H * 1.2)
+        file.write(str(boxes[i][0]) + " " + str(y) + " " + str(H) + " " + str(W) + " " + str(scores[i]) + "\n")
 
 
 class Detect:
@@ -63,7 +63,7 @@ class Detect:
                 output = self.model(scaled_image.float()).squeeze()
             probability_map = torch.softmax(output, dim=1).numpy()[0]
             x, y = np.indices(output.shape[1:])
-            positive_idx = probability_map > 0.5
+            positive_idx = probability_map > 0.2
             x, y = 2 * x[positive_idx], 2 * y[positive_idx]
             probability_map = probability_map[positive_idx]
             boxes_for_nms = np.rollaxis(np.stack([x, y, x + 12, y + 12]), 1, 0)
@@ -104,10 +104,5 @@ else:
     state_dict = torch.load('12NetFCN.pt', map_location=torch.device('cpu'))['model_state_dict']
 
 model.load_state_dict(state_dict)
-detect = Detect(model, scale=1.5, min_size=(32, 32), iou_th=0.05)
-image = cv.imread('img2.jpg')
-bounding_boxes, scores = detect.detect(image)
-# overlay(image, bounding_boxes)
-f = open('test.txt', 'w')
-write_to_file(f, bounding_boxes, scores, 'image.jpg')
+detect = Detect(model, scale=1.2, min_size=(32, 32), iou_th=0.5)
 evaluate_model("data/fddb/FDDB-folds/FDDB-fold-01.txt", detect)
