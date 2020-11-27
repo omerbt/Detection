@@ -16,7 +16,7 @@ parser.add_argument('--batch', type=int, default=256,
                     help='input batch size for training (default: 256)')
 parser.add_argument('--epochs', type=int, default=300,
                     help='number of epochs to train (default: 10000)')
-parser.add_argument('--learning_rate', type=float, default=1 * 1e-5,
+parser.add_argument('--learning_rate', type=float, default=1 * 1e-4,
                     help='learning rate for model training (default: 1*1e-4)')
 parser.add_argument('--seed', type=int, default=42,
                     help='random seed (default: 42). [ignored]')
