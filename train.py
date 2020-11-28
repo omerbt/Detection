@@ -5,13 +5,15 @@ import os
 import torch
 from torch.utils.data import Dataset, DataLoader
 
-from net12 import Net
+from net12 import Net as Net12
+from net24 import Net as Net24
 from net12FCN import NetFCN
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-parser = argparse.ArgumentParser(description='12-Net')
-parser.add_argument('--model', type=str, default='FCN')
+parser = argparse.ArgumentParser(description='model to train.'
+                                             '[12net, 12FCN, 24net]')
+parser.add_argument('--model', type=str, default='12FCN')
 parser.add_argument('--batch', type=int, default=256,
                     help='input batch size for training (default: 256)')
 parser.add_argument('--epochs', type=int, default=300,
@@ -35,13 +37,18 @@ if not os.path.isfile(args.nonface_data):
     raise ValueError(f'Invalid value for nonface_data. {args.nonface_data}'
                      f' is not a file.')
 
+if args.model not in ['12net', '12FCN', '24net']:
+    raise ValueError('Invalid value for model. Model must be one of: 12net, 12FCN, 24net')
+
 if not os.path.isdir(args.output_dir):
     os.mkdir(args.output_dir)
 
-if args.model == 'FCN':
+if args.model == '12FCN':
     model = NetFCN().to(device)
-else:
-    model = Net().to(device)
+elif args.model == '12net':
+    model = Net12().to(device)
+elif args.model == '24net':
+    model = Net24().to(device)
 
 optimizer = torch.optim.Adam(list(model.parameters()), lr=args.learning_rate)
 criterion = torch.nn.CrossEntropyLoss()
@@ -82,7 +89,7 @@ for n in range(1, epochs + 1):
         data, labels = data.to(device), labels.to(device)
         optimizer.zero_grad()
         outputs = model(data)
-        if args.model == 'FCN':
+        if args.model == '12FCN':
             outputs = outputs.squeeze()
         _, preds = torch.max(outputs.data, 1)
         hits += torch.sum(preds == labels.data)
@@ -100,7 +107,7 @@ for n in range(1, epochs + 1):
             'model_state_dict': model.state_dict(),
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': loss.item(),
-        }, os.path.join(args.output_dir, f'12Net_{n}.pt'))
+        }, os.path.join(args.output_dir, f'{args.model}_{n}.pt'))
 
 plt.plot(running_loss)
 plt.xlabel('Epoch')

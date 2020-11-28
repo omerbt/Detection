@@ -19,9 +19,3 @@ class NetFCN(nn.Module):
         x = self.conv1(x)
         x = self.conv2(x)
         return x
-
-
-model = NetFCN()
-non_face = torch.load('data/patches_12_new.pt')
-face = torch.load('data/train_12.pt')
-data = torch.cat((non_face, face), 0)

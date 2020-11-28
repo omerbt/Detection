@@ -6,8 +6,6 @@ import numpy as np
 import imutils
 import os
 
-from noyNet import Net
-
 
 def overlay(image, bounding_boxes):
     for x1, y1, x2, y2 in bounding_boxes:
@@ -32,9 +30,10 @@ def write_to_file(file, boxes, scores, image):
     file.write(str(len(boxes)) + "\n")
     for i in range(len(boxes)):
         H = W = boxes[i][2] - boxes[i][0]
-        y = max(0, int(boxes[i][1] - 0.2 * H))
-        H = int(H * 1.2)
-        file.write(str(boxes[i][0]) + " " + str(y) + " " + str(H) + " " + str(W) + " " + str(scores[i]) + "\n")
+        x = max(0, boxes[i][0] - 0.1 * H)
+        y = boxes[i][1]
+        H *= 1.2
+        file.write(str(x) + " " + str(y) + " " + str(W) + " " + str(H) + " " + str(scores[i]) + "\n")
 
 
 class Detect:
@@ -63,7 +62,7 @@ class Detect:
                 output = self.model(scaled_image.float()).squeeze()
             probability_map = torch.softmax(output, dim=1).numpy()[0]
             x, y = np.indices(output.shape[1:])
-            positive_idx = probability_map > 0.2
+            positive_idx = probability_map > 0.5
             x, y = 2 * x[positive_idx], 2 * y[positive_idx]
             probability_map = probability_map[positive_idx]
             boxes_for_nms = np.rollaxis(np.stack([x, y, x + 12, y + 12]), 1, 0)
@@ -95,14 +94,12 @@ class Detect:
             yield image
 
 
-noy = False
-if noy:
-    model = Net()
-    state_dict = torch.load('n12_fcn_model_200_epoch.pt', map_location=torch.device('cpu'))
-else:
-    model = NetFCN()
-    state_dict = torch.load('12NetFCN.pt', map_location=torch.device('cpu'))['model_state_dict']
+model = NetFCN()
+state_dict = torch.load('12Net_60.pt', map_location=torch.device('cpu'))['model_state_dict']
 
 model.load_state_dict(state_dict)
-detect = Detect(model, scale=1.2, min_size=(32, 32), iou_th=0.5)
+detect = Detect(model, scale=1.1, min_size=(24, 24), iou_th=0.4)
+# image = cv.imread('img.jpg')
+# boxes, scores = detect.detect(image)
+# overlay(image, boxes)
 evaluate_model("data/fddb/FDDB-folds/FDDB-fold-01.txt", detect)
