@@ -145,9 +145,9 @@ for epoch in range(1, epochs + 1):
             'val_loss': val_loss[-1]
         }, os.path.join(args.output_dir, f'{args.model}_{epoch}.pt'))
 
-    plt.plot(train_loss, label='train')
-    plt.plot(val_loss, label='validation')
-    plt.xlabel('Epoch')
-    plt.ylabel('Loss')
-    plt.legend()
-    plt.savefig(os.path.join(args.output_dir, 'loss.png'))
+plt.plot(train_loss, label='train')
+plt.plot(val_loss, label='validation')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.savefig(os.path.join(args.output_dir, 'loss.png'))
