@@ -19,9 +19,3 @@ class Net(nn.Module):
         x = self.conv1(x)
         x = self.linear(x.view(x.size(0), -1))
         return x
-
-
-model = Net()
-non_face = torch.load('data/patches_12_new.pt')
-face = torch.load('data/train_12.pt')
-data = torch.cat((non_face, face), 0)

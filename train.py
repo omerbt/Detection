@@ -57,8 +57,8 @@ criterion = torch.nn.CrossEntropyLoss()
 
 class dataset(Dataset):
     def __init__(self, faces_path, nonfaces_path):
-        faces = torch.load(faces_path)
-        non_faces = torch.load(nonfaces_path)
+        faces = torch.load(faces_path).float()
+        non_faces = torch.load(nonfaces_path).float()
         self.x = torch.cat((faces, non_faces), 0)
         positive = torch.ones(faces.shape[0], dtype=torch.long)
         negative = torch.zeros(non_faces.shape[0], dtype=torch.long)
