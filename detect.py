@@ -12,7 +12,7 @@ import os
 def overlay(image, bounding_boxes):
     bounding_boxes = np.array(bounding_boxes, dtype=np.uint32)
     for x1, y1, x2, y2 in bounding_boxes:
-        cv.rectangle(image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv.rectangle(image, (y1, x1), (y2, x2), (0, 255, 0), 2)
     cv.imshow('image', image)
     cv.waitKey(0)
 
@@ -21,14 +21,10 @@ def evaluate_model(path, detect, suffix='.jpg'):
     f = open(path, 'r')
     out = open("fold-01-out.txt", 'w')
     for line in f:
-        try:
-            assert os.path.isfile(os.path.join('data/fddb/images', line[:-1] + suffix))
-            image = cv.imread(os.path.join('data/fddb/images', line[:-1] + suffix))
-            boxes, scores = detect.detect(image)
-            write_to_file(out, boxes, scores, line[:-1])
-        except:
-            print(os.path.join('data/fddb/images', line[:-1] + suffix))
-            return
+        assert os.path.isfile(os.path.join('data/fddb/images', line[:-1] + suffix))
+        image = cv.imread(os.path.join('data/fddb/images', line[:-1] + suffix))
+        boxes, scores = detect.detect(image)
+        write_to_file(out, boxes, scores, line[:-1])
 
 
 def write_to_file(file, boxes, scores, image):
@@ -39,7 +35,7 @@ def write_to_file(file, boxes, scores, image):
         x = max(0, boxes[i][0] - 0.1 * H)
         y = boxes[i][1]
         H *= 1.2
-        file.write(str(x) + " " + str(y) + " " + str(W) + " " + str(H) + " " + str(scores[i]) + "\n")
+        file.write(str(y) + " " + str(x) + " " + str(W) + " " + str(H) + " " + str(scores[i]) + "\n")
 
 
 def check_24net(boxes, image, model):
@@ -75,15 +71,15 @@ class Detect:
         bounding_boxes = []
         scores = []
         for scale in self.scales:
-            w = int(image.shape[0] * scale)
-            h = int(image.shape[1] * scale)
+            w = int(image.shape[1] * scale)
+            h = int(image.shape[0] * scale)
             scaled_image = imutils.resize(image, width=w, height=h)
             if scaled_image.shape[0] < 12 or scaled_image.shape[1] < 12:
                 continue
             scaled_image = np.rollaxis(scaled_image, 2, 0)  # convert to channels_first
             scaled_image = torch.tensor(scaled_image).unsqueeze(0).to(self.device)
             with torch.no_grad():
-                output = self.model12(scaled_image.float()).squeeze()
+                output = self.model12(scaled_image.float()).squeeze(0)
             probability_map = torch.softmax(output, dim=1).numpy()[0]
             x, y = np.indices(output.shape[1:])
             positive_idx = probability_map > 0.5
@@ -115,14 +111,15 @@ class Detect:
 model12 = NetFCN()
 model24 = Net24()
 
-state_dict_12 = torch.load('12FCN_10.pt', map_location=torch.device('cpu'))['model_state_dict']
-state_dict_24 = torch.load('24net_20.pt', map_location=torch.device('cpu'))['model_state_dict']
+state_dict_12 = torch.load('12FCN_12.pt', map_location=torch.device('cpu'))['model_state_dict']
+state_dict_24 = torch.load('24net_2.pt', map_location=torch.device('cpu'))['model_state_dict']
 
 model12.load_state_dict(state_dict_12)
 model24.load_state_dict(state_dict_24)
 scales = [0.05, 0.08, 0.13, 0.2]
-detect = Detect(model12, scales=scales, iou_th=0.3)  # , model24=model24)
+detect = Detect(model12, scales=scales[1:], iou_th=0.05, model24=model24)
 image = cv.imread('data/fddb/images/2002/08/28/big/img_19238.jpg')
+# image = cv.imread('img.jpg')
 boxes, scores = detect.detect(image)
 overlay(image, boxes)
 # evaluate_model("data/fddb/FDDB-folds/FDDB-fold-01.txt", detect)

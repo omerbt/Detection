@@ -27,8 +27,8 @@ parser.add_argument('--interval', type=int, default=10,
                     help='interval for saving checkpoint (default: 10)')
 parser.add_argument('--output_dir', type=str, default='12-net_results',
                     help='Where to save model')
-parser.add_argument('--face_data', type=str, default='data/train_12.pt')
-parser.add_argument('--nonface_data', type=str, default='data/12negative.pt')
+parser.add_argument('--face_data', type=str, default='data/train_24.pt')
+parser.add_argument('--nonface_data', type=str, default='data/24negative.pt')
 
 args = parser.parse_args()
 if not os.path.isfile(args.face_data):
