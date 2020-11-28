@@ -11,9 +11,8 @@ from net12FCN import NetFCN
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-parser = argparse.ArgumentParser(description='model to train.'
-                                             '[12net, 12FCN, 24net]')
-parser.add_argument('--model', type=str, default='12FCN')
+parser = argparse.ArgumentParser(description='')
+parser.add_argument('--model', type=str, default='12FCN', help='model to train [12net, 12FCN, 24net]')
 parser.add_argument('--batch', type=int, default=256,
                     help='input batch size for training (default: 256)')
 parser.add_argument('--epochs', type=int, default=300,

@@ -7,7 +7,6 @@ class NetFCN(nn.Module):
         super(NetFCN, self).__init__()
         self.conv1 = nn.Sequential(
             nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(16),
             nn.MaxPool2d(kernel_size=3, stride=2),
             nn.ReLU()
         )
