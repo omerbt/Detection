@@ -116,10 +116,11 @@ state_dict_24 = torch.load('24net_2.pt', map_location=torch.device('cpu'))['mode
 
 model12.load_state_dict(state_dict_12)
 model24.load_state_dict(state_dict_24)
-scales = [0.05, 0.08, 0.13, 0.2]
-detect = Detect(model12, scales=scales[1:], iou_th=0.05, model24=model24)
-image = cv.imread('data/fddb/images/2002/08/28/big/img_19238.jpg')
+scales = [0.08 + 0.02 * i for i in range(20)]
+detect = Detect(model12, scales=scales, iou_th=0.9)#, model24=model24)
+# image = cv.imread('data/fddb/images/2002/08/28/big/img_19238.jpg')
 # image = cv.imread('img.jpg')
+image = cv.imread('data/fddb/images/2002/08/11/big/img_258.jpg')
 boxes, scores = detect.detect(image)
 overlay(image, boxes)
 # evaluate_model("data/fddb/FDDB-folds/FDDB-fold-01.txt", detect)
