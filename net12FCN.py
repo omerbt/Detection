@@ -11,7 +11,7 @@ class NetFCN(nn.Module):
             nn.ReLU()
         )
         self.conv2 = nn.Sequential(
-            nn.Conv2d(16, 2, kernel_size=5),
+            nn.Conv2d(16, 2, kernel_size=5)
         )
 
     def forward(self, x):

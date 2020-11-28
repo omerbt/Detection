@@ -23,12 +23,12 @@ parser.add_argument('--learning_rate', type=float, default=1 * 1e-4,
                     help='learning rate for model training (default: 1*1e-4)')
 parser.add_argument('--seed', type=int, default=42,
                     help='random seed (default: 42). [ignored]')
-parser.add_argument('--interval', type=int, default=20,
-                    help='interval for saving checkpoint (default: 20)')
+parser.add_argument('--interval', type=int, default=10,
+                    help='interval for saving checkpoint (default: 10)')
 parser.add_argument('--output_dir', type=str, default='12-net_results',
                     help='Where to save model')
 parser.add_argument('--face_data', type=str, default='data/train_12.pt')
-parser.add_argument('--nonface_data', type=str, default='data/patches_12_new.pt')
+parser.add_argument('--nonface_data', type=str, default='data/12negative.pt')
 
 args = parser.parse_args()
 if not os.path.isfile(args.face_data):
