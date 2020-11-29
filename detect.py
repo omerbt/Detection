@@ -45,6 +45,7 @@ def check_24net(boxes, image, model):
             x_l, y_l, _, _ = box
             crop = image[0:, 0:, x_l:x_l + 12, y_l:y_l + 12]
             output = model(F.interpolate(crop, size=24).float()).squeeze()
+            # idx.append(torch.softmax(output, dim=0).numpy()[0] > 0.5)
             idx.append(output[0] > output[1])
     return idx
 
@@ -113,13 +114,13 @@ class Detect:
 model12 = NetFCN()
 model24 = Net24()
 
-state_dict_12 = torch.load('12FCN_50.pt', map_location=torch.device('cpu'))['model_state_dict']
-state_dict_24 = torch.load('24net_2.pt', map_location=torch.device('cpu'))['model_state_dict']
+state_dict_12 = torch.load('12FCN_2300.pt', map_location=torch.device('cpu'))['model_state_dict']
+state_dict_24 = torch.load('24net_820.pt', map_location=torch.device('cpu'))['model_state_dict']
 
 model12.load_state_dict(state_dict_12)
 model24.load_state_dict(state_dict_24)
-scales = [0.05 + 0.08 * i for i in range(20)]
-detect = Detect(model12, scales=scales, iou_th=0.7, model24=model24)
+scales = [0.05, 0.08, 0.13, 0.2]  # [0.08 + 0.02 * i for i in range(10)]
+detect = Detect(model12, scales=scales, iou_th=0.5)  # , model24=model24)
 # image = cv.imread('img.jpg')
 # boxes, scores = detect.detect(image)
 # overlay(image, boxes)
