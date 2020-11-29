@@ -32,10 +32,10 @@ def write_to_file(file, boxes, scores, image):
     file.write(str(len(boxes)) + "\n")
     for i in range(len(boxes)):
         H = W = boxes[i][2] - boxes[i][0]
-        x = max(0, boxes[i][0] - 0.1 * H)
-        y = boxes[i][1]
+        y = max(0, boxes[i][1] - 0.1 * H)
+        x = boxes[i][0]
         H *= 1.2
-        file.write(str(y) + " " + str(x) + " " + str(W) + " " + str(H) + " " + str(scores[i]) + "\n")
+        file.write(str(y) + " " + str(x) + " " + str(H) + " " + str(H) + " " + str(scores[i]) + "\n")
 
 
 def check_24net(boxes, image, model):
@@ -73,6 +73,8 @@ class Detect:
         for scale in self.scales:
             w = int(image.shape[1] * scale)
             h = int(image.shape[0] * scale)
+            if w <= 1 or h <= 1:
+                continue
             scaled_image = imutils.resize(image, width=w, height=h)
             if scaled_image.shape[0] < 12 or scaled_image.shape[1] < 12:
                 continue
@@ -111,16 +113,14 @@ class Detect:
 model12 = NetFCN()
 model24 = Net24()
 
-state_dict_12 = torch.load('12FCN_12.pt', map_location=torch.device('cpu'))['model_state_dict']
+state_dict_12 = torch.load('12FCN_50.pt', map_location=torch.device('cpu'))['model_state_dict']
 state_dict_24 = torch.load('24net_2.pt', map_location=torch.device('cpu'))['model_state_dict']
 
 model12.load_state_dict(state_dict_12)
 model24.load_state_dict(state_dict_24)
-scales = [0.08 + 0.02 * i for i in range(20)]
-detect = Detect(model12, scales=scales, iou_th=0.9)#, model24=model24)
-# image = cv.imread('data/fddb/images/2002/08/28/big/img_19238.jpg')
+scales = [0.05 + 0.08 * i for i in range(20)]
+detect = Detect(model12, scales=scales, iou_th=0.7, model24=model24)
 # image = cv.imread('img.jpg')
-image = cv.imread('data/fddb/images/2002/08/11/big/img_258.jpg')
-boxes, scores = detect.detect(image)
-overlay(image, boxes)
-# evaluate_model("data/fddb/FDDB-folds/FDDB-fold-01.txt", detect)
+# boxes, scores = detect.detect(image)
+# overlay(image, boxes)
+evaluate_model("data/fddb/FDDB-folds/FDDB-fold-01.txt", detect)
