@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser(description='')
 parser.add_argument('--model', type=str, default='24net', help='model to train [12net, 12FCN, 24net]')
 parser.add_argument('--batch', type=int, default=256,
                     help='input batch size for training (default: 256)')
-parser.add_argument('--epochs', type=int, default=300,
+parser.add_argument('--epochs', type=int, default=50,
                     help='number of epochs to train (default: 300)')
 parser.add_argument('--learning_rate', type=float, default=1 * 1e-4,
                     help='learning rate for model training (default: 1*1e-4)')
@@ -83,8 +83,8 @@ non_faces = torch.load(args.nonface_data).float()
 train_indices_face, val_indices_face = train_val_split(faces.shape[0])
 train_indices_nonface, val_indices_nonface = train_val_split(non_faces.shape[0])
 
-train_loader = DataLoader(dataset(faces[train_indices_face], non_faces[val_indices_face]), batch_size=args.batch)
-val_loader = DataLoader(dataset(faces[train_indices_nonface], non_faces[val_indices_nonface]), batch_size=args.batch)
+train_loader = DataLoader(dataset(faces[train_indices_face], non_faces[train_indices_nonface]), batch_size=args.batch)
+val_loader = DataLoader(dataset(faces[val_indices_face], non_faces[val_indices_nonface]), batch_size=args.batch)
 
 epochs = args.epochs
 train_loss, val_loss, train_accuracy, val_accuracy = [], [], [], []
